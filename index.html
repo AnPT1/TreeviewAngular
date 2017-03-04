@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+<script src="script\jquery-3.1.1.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+  crossorigin="anonymous">
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+
+    <body>
+      <div ng-app="myApp" ng-controller="myCtrl" class="container" style="margin-top:100px;">
+        <div class="row">
+          <div class="col-md-6">
+            <textarea rows="30" cols="" id="txtInputTree" ng-model="in.textModel" value="3" style="width:100%;"></textarea>
+            <button type="button" class="btn btn-primary" ng-click="generateTree()">Gen Tree</button>
+          </div>
+          <div class="col-md-6">
+            <div>
+              <li ng-repeat="data in tree" ng-include="'tree_item_renderer.html'"></li>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+    <script>
+      var app = angular.module('myApp', []);
+
+      app.controller('myCtrl', function ($scope) {
+        $scope.text = "";
+        $scope.in = { textModel: "" }
+        $scope.nodeSearch = function (treeNodes, searchID) {
+          for (var nodeIdx = 0; nodeIdx <= treeNodes.length - 1; nodeIdx++) {
+            var currentNode = treeNodes[nodeIdx];
+
+            if (currentNode.id == searchID) {
+              return currentNode;
+            } else if (currentNode.children !== undefined) {
+              var foundDescendant = $scope.nodeSearch(currentNode.children, searchID);
+              if (foundDescendant) {
+                return foundDescendant;
+              }
+            }
+          }
+          return false;
+        };
+
+        $scope.generateTree = function () {
+          try {
+            $scope.tree = JSON.parse($scope.in.textModel);
+          } catch (error) {
+            alert(error);
+          }
+        }
+
+        var count = 0;
+        $scope.setData = function (data) {
+          var elements = [];
+
+          if (data.chk === true && data.parentId !== null) {
+            if (data.parentId !== undefined) {
+              count++;
+              elements.push($scope.nodeSearch($scope.tree, data.parentId));
+            } else {
+              if (count === 0) {
+                if (data.children !== undefined && data.parentId === undefined) {
+                  for (var nodeIdx = 0; nodeIdx <= data.children.length - 1; nodeIdx++) {
+                    var currentNode = data.children[nodeIdx];
+                    elements.push($scope.nodeSearch($scope.tree, currentNode.id));
+                    if (currentNode.children !== undefined) {
+                      for (var nodeIdy = 0; nodeIdy <= currentNode.children.length - 1; nodeIdy++) {
+                        var currentNode2 = currentNode.children[nodeIdy];
+                        elements.push($scope.nodeSearch($scope.tree, currentNode2.id));
+                      }
+                    }
+                  }
+                }
+              }
+              else {
+                count = 0;
+              }
+            }
+          } else if (data.chk === false) {
+            angular.forEach(data.children, function (child, key) {
+              elements.push($scope.nodeSearch(data.children, child.id));
+            });
+          }
+          angular.forEach(elements, function (element, key) {
+            element.chk = data.chk;
+            $scope.setData(element);
+          });
+        };
+      });
+    </script>
+</html>
